@@ -1,6 +1,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#include <Arduino.h>
 #include "config.h"
 
 #define SCHEDULER_GUARD(__current__, __var__) \
