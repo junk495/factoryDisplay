@@ -3,6 +3,18 @@
 
 uint16_t draw_buf_0[DRAW_BUF_SIZE + 10];
 
+// Hilfsfunktion zum Ersetzen von Umlauten (UTF-8)
+String replaceUmlauts(String str) {
+    str.replace("ä", "ae");
+    str.replace("ö", "oe");
+    str.replace("ü", "ue");
+    str.replace("Ä", "Ae");
+    str.replace("Ö", "Oe");
+    str.replace("Ü", "Ue");
+    str.replace("ß", "ss");
+    return str;
+}
+
 namespace Data {
 	namespace details {
 		int speed                 = -1;
@@ -52,16 +64,16 @@ namespace UI {
 		lv_obj_set_style_text_color(lblSpeedUnit, lv_color_make(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
 
 		lblDistanceToNextRoad = lv_label_create(lv_scr_act());
-		lv_label_set_text(lblDistanceToNextRoad, ""); // Leer am Anfang
+		lv_label_set_text(lblDistanceToNextRoad, ""); 
 		lv_obj_set_style_text_color(lblDistanceToNextRoad, lv_color_make(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
 
 		lblNextRoad = lv_label_create(lv_scr_act());
-		lv_label_set_text(lblNextRoad, ""); // Leer am Anfang
-		lv_obj_set_style_text_color(lblNextRoad, lv_color_make(0x88, 0x88, 0xFF), LV_PART_MAIN);
+		lv_label_set_text(lblNextRoad, ""); 
+		lv_obj_set_style_text_color(lblNextRoad, lv_color_make(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
 
 		lblNextRoadDesc = lv_label_create(lv_scr_act());
 		lv_label_set_text(lblNextRoadDesc, "Ready...");
-		lv_obj_set_style_text_color(lblNextRoadDesc, lv_color_make(0xAA, 0xAA, 0xAA), LV_PART_MAIN);
+		lv_obj_set_style_text_color(lblNextRoadDesc, lv_color_make(0x88, 0x88, 0xFF), LV_PART_MAIN);
 
 		lblEta = lv_label_create(lv_scr_act());
 		lv_label_set_text(lblEta, "");
@@ -69,13 +81,18 @@ namespace UI {
 
 		const int RIGHT_COL_WIDTH = SCREEN_WIDTH / 2 - 10;
 
-		// Icon oben links
+		// Icon oben links (10, 10)
 		lv_obj_set_style_width(imgTbtIcon, ICON_WIDTH, LV_PART_MAIN);
 		lv_obj_set_style_height(imgTbtIcon, ICON_HEIGHT, LV_PART_MAIN);
 		lv_obj_align(imgTbtIcon, LV_ALIGN_TOP_LEFT, 10, 10);
 
+		// Entfernung direkt unter dem Icon
+		lv_obj_set_style_width(lblDistanceToNextRoad, ICON_WIDTH + 20, LV_PART_MAIN);
+		lv_obj_set_style_text_font(lblDistanceToNextRoad, get_montserrat_semibold_24(), LV_STATE_DEFAULT);
+		lv_obj_set_style_text_align(lblDistanceToNextRoad, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+		lv_obj_align(lblDistanceToNextRoad, LV_ALIGN_TOP_LEFT, 0, 75);
+
 		// Speed oben rechts
-		lv_label_set_long_mode(lblSpeed, LV_LABEL_LONG_SCROLL_CIRCULAR);
 		lv_obj_set_style_width(lblSpeed, RIGHT_COL_WIDTH, LV_PART_MAIN);
 		lv_obj_set_style_text_font(lblSpeed, get_montserrat_number_bold_48(), LV_STATE_DEFAULT);
 		lv_obj_set_style_text_align(lblSpeed, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
@@ -87,28 +104,21 @@ namespace UI {
 		lv_obj_set_style_text_align(lblSpeedUnit, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
 		lv_obj_align_to(lblSpeedUnit, lblSpeed, LV_ALIGN_OUT_BOTTOM_LEFT, 0, -5);
 
-		// Distance to next road (mittig)
-		lv_label_set_long_mode(lblDistanceToNextRoad, LV_LABEL_LONG_SCROLL_CIRCULAR);
-		lv_obj_set_style_width(lblDistanceToNextRoad, SCREEN_WIDTH - 20, LV_PART_MAIN);
-		lv_obj_set_style_text_font(lblDistanceToNextRoad, get_montserrat_bold_32(), LV_STATE_DEFAULT);
-		lv_obj_set_style_text_align(lblDistanceToNextRoad, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-		lv_obj_align(lblDistanceToNextRoad, LV_ALIGN_TOP_MID, 0, 130);
-
-		// Next road name
-		lv_label_set_long_mode(lblNextRoad, LV_LABEL_LONG_SCROLL_CIRCULAR);
+		// Haupt-Anweisung (Mittig, Umbrochen)
+		lv_label_set_long_mode(lblNextRoad, LV_LABEL_LONG_WRAP);
 		lv_obj_set_style_width(lblNextRoad, SCREEN_WIDTH - 20, LV_PART_MAIN);
 		lv_obj_set_style_text_font(lblNextRoad, get_montserrat_semibold_28(), LV_STATE_DEFAULT);
 		lv_obj_set_style_text_align(lblNextRoad, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-		lv_obj_align_to(lblNextRoad, lblDistanceToNextRoad, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 5);
+		lv_obj_align(lblNextRoad, LV_ALIGN_TOP_MID, 0, 120);
 
-		// Next road description
-		lv_label_set_long_mode(lblNextRoadDesc, LV_LABEL_LONG_SCROLL_CIRCULAR);
+		// Zusätzliche Beschreibung
+		lv_label_set_long_mode(lblNextRoadDesc, LV_LABEL_LONG_WRAP);
 		lv_obj_set_style_width(lblNextRoadDesc, SCREEN_WIDTH - 20, LV_PART_MAIN);
 		lv_obj_set_style_text_font(lblNextRoadDesc, get_montserrat_semibold_24(), LV_STATE_DEFAULT);
 		lv_obj_set_style_text_align(lblNextRoadDesc, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-		lv_obj_align_to(lblNextRoadDesc, lblNextRoad, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 5);
+		lv_obj_align_to(lblNextRoadDesc, lblNextRoad, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 10);
 
-		// ETA unten
+		// ETA / Reststrecke ganz unten
 		lv_label_set_long_mode(lblEta, LV_LABEL_LONG_SCROLL_CIRCULAR);
 		lv_obj_set_style_text_font(lblEta, get_montserrat_24(), LV_STATE_DEFAULT);
 		lv_obj_set_style_width(lblEta, SCREEN_WIDTH - 20, LV_PART_MAIN);
@@ -215,7 +225,7 @@ namespace Data {
 			ThemeControl::flashScreen();
 		}
 		details::nextRoad = value;
-		lv_label_set_text(UI::details::lblNextRoad, value.c_str());
+		lv_label_set_text(UI::details::lblNextRoad, replaceUmlauts(value).c_str());
 	}
 
 	String nextRoadDesc() {
@@ -226,7 +236,7 @@ namespace Data {
 		if (value == details::nextRoadDesc)
 			return;
 		details::nextRoadDesc = value;
-		lv_label_set_text(UI::details::lblNextRoadDesc, value.c_str());
+		lv_label_set_text(UI::details::lblNextRoadDesc, replaceUmlauts(value).c_str());
 	}
 
 	String eta() {
@@ -270,7 +280,35 @@ namespace Data {
 		if (value == details::distanceToNextTurn)
 			return;
 		details::distanceToNextTurn = value;
-		lv_label_set_text(UI::details::lblDistanceToNextRoad, value.c_str());
+
+		// Splitting-Logik: "270m ● Text..." trennen
+		int mIdx = value.indexOf("m ");
+		int kmIdx = value.indexOf("km ");
+		String distPart = "";
+		String instrPart = value;
+
+		if (mIdx != -1) {
+			distPart = value.substring(0, mIdx + 1);
+			instrPart = value.substring(mIdx + 2);
+		} else if (kmIdx != -1) {
+			distPart = value.substring(0, kmIdx + 2);
+			instrPart = value.substring(kmIdx + 3);
+		}
+
+		// "Box"-Zeichen (Bullet) und führende Sonderzeichen am Anfang der Anweisung entfernen
+		while (instrPart.length() > 0 && (unsigned char)instrPart[0] > 127) {
+			instrPart.remove(0, 1);
+		}
+		instrPart.trim();
+
+		if (distPart.length() > 0) {
+			lv_label_set_text(UI::details::lblDistanceToNextRoad, distPart.c_str());
+			lv_label_set_text(UI::details::lblNextRoad, replaceUmlauts(instrPart).c_str());
+		} else {
+			// Falls kein Distanz-Muster gefunden wurde, alles ins Hauptfeld
+			lv_label_set_text(UI::details::lblDistanceToNextRoad, "");
+			lv_label_set_text(UI::details::lblNextRoad, replaceUmlauts(value).c_str());
+		}
 	}
 
 	String fullEta() {
@@ -313,7 +351,8 @@ namespace Data {
 			Serial.println("Drawing icon");
 			convert1BitBitmapToRgb565(details::iconRenderBuffer, value, 64, 64, 
                               lv_color_to_u16(lv_color_make(0xFF, 0xFF, 0xFF)),
-                              lv_color_to_u16(lv_color_make(0x00, 0x00, 0x00)));
+                              lv_color_to_u16(lv_color_make(0x00, 0x00, 0x00)),
+							  false);
 			details::iconDirty = true;
 		}
 	}
