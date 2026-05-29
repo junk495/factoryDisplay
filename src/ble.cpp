@@ -1,5 +1,8 @@
 #include "ble.h"
 #include <Arduino.h>
+#include <esp_bt.h>
+#include <esp_bt_main.h>
+#include <esp_gatt_common_api.h>
 
 BLEServer* pServer      = NULL;
 bool deviceConnected    = false;
@@ -75,6 +78,12 @@ class CharacteristicWriteCallbacks : public BLECharacteristicCallbacks {
 void initBle() {
 	// Create the BLE Device
 	BLEDevice::init("CatDrive");
+	
+	// Maximale Sendeleistung für Bluetooth einstellen (+9dBm beim S3)
+	esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
+	esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P9);
+	esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_SCAN, ESP_PWR_LVL_P9);
+
 	Serial.println(BLEDevice::getMTU());
 	BLEDevice::setMTU(240);
 
@@ -123,7 +132,17 @@ void initBle() {
 	catDriveService.bleService->start();
 	server.services.push_back(catDriveService);
 
-	server.bleServer->getAdvertising()->start();
+	// Bluetooth Advertising konfigurieren für bessere Stabilität
+	BLEAdvertising *pAdvertising = server.bleServer->getAdvertising();
+	pAdvertising->addServiceUUID(SERVICE_UUID);
+	
+	// Parameter für iOS/Android optimieren
+	pAdvertising->setMinPreferred(0x06);  // 7.5ms
+	pAdvertising->setMaxPreferred(0x12);  // 22.5ms
+	
+	pAdvertising->setScanResponse(true);
+	pAdvertising->start();
+	Serial.println("BLE Advertising started with optimized parameters.");
 }
 
 void notifyCharacteristic(const String& uuid, uint8_t* data, size_t length) {

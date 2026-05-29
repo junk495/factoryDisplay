@@ -72,7 +72,7 @@ namespace UI {
 		lv_obj_set_style_text_color(lblNextRoad, lv_color_make(0xFF, 0xFF, 0xFF), LV_PART_MAIN);
 
 		lblNextRoadDesc = lv_label_create(lv_scr_act());
-		lv_label_set_text(lblNextRoadDesc, "Ready...");
+		lv_label_set_text(lblNextRoadDesc, ""); 
 		lv_obj_set_style_text_color(lblNextRoadDesc, lv_color_make(0x88, 0x88, 0xFF), LV_PART_MAIN);
 
 		lblEta = lv_label_create(lv_scr_act());

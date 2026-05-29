@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <WiFi.h>
 
 #include "config.h"
 #include "preferences.h"
@@ -134,6 +135,11 @@ void setup() {
 	delay(2000);
 
 	Serial.begin(115200);
+
+	// WLAN komplett deaktivieren, damit Bluetooth die Antenne allein nutzen kann
+	WiFi.mode(WIFI_OFF);
+	Serial.println("WiFi turned off.");
+
 	Serial.println("Initializing display...");
 	
 	// Display + LVGL initialisieren (initialisiert auch SPI)
