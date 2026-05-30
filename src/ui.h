@@ -35,6 +35,10 @@ namespace Data {
 		extern String eta;
 		extern String ete;
 		extern String distanceToNextTurn;
+		extern String nextTurn2Distance;
+		extern String nextTurn2Text;
+		extern String hazardDistance;
+		extern String hazardText;
 		extern String totalDistance;
 		extern String displayIconHash; 
 		extern String receivedIconHash; 
@@ -63,6 +67,10 @@ namespace Data {
 	void setTotalDistance(const String& value);
 	String distanceToNextTurn();
 	void setDistanceToNextTurn(const String& value);
+	void setNextTurn2Distance(const String& value);
+	void setNextTurn2Text(const String& value);
+	void setHazardDistance(const String& value);
+	void setHazardText(const String& value);
 	String displayIconHash();
 	void setIconHash(const String& value);
 	uint8_t* iconRenderBuffer();
@@ -89,12 +97,15 @@ namespace UI {
 		extern lv_obj_t* lblNextRoad;
 		extern lv_obj_t* lblNextRoadDesc;
 		extern lv_obj_t* lblDistanceToNextRoad;
+		extern lv_obj_t* lblNextTurn2;
+		extern lv_obj_t* lblHazard;
 		extern lv_obj_t* imgTbtIcon;
 		extern uint32_t lastUpdate;
 	} // namespace details
 
 	void init();
 	void update();
+	void updateThemeColors();
 } // namespace UI
 
 void convert1BitBitmapToRgb565(void* dst, const void* src, uint16_t width, uint16_t height, uint16_t color, uint16_t bgColor, bool invert = false);

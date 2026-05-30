@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "preferences.h"
 #include <Arduino.h>
 
 uint16_t draw_buf_0[DRAW_BUF_SIZE + 10];
@@ -23,6 +24,10 @@ namespace Data {
 		String eta                = String();
 		String ete                = String();
 		String distanceToNextTurn = String();
+		String nextTurn2Distance  = String();
+		String nextTurn2Text      = String();
+		String hazardDistance     = String();
+		String hazardText         = String();
 		String totalDistance      = String();
 		String displayIconHash    = String();
 		String receivedIconHash   = String();
@@ -42,6 +47,8 @@ namespace UI {
 		lv_obj_t* lblNextRoad;
 		lv_obj_t* lblNextRoadDesc;
 		lv_obj_t* lblDistanceToNextRoad;
+		lv_obj_t* lblNextTurn2;
+		lv_obj_t* lblHazard;
 		lv_obj_t* imgTbtIcon;
 		uint32_t lastUpdate = 0;
 	} // namespace details
@@ -74,6 +81,14 @@ namespace UI {
 		lblNextRoadDesc = lv_label_create(lv_scr_act());
 		lv_label_set_text(lblNextRoadDesc, ""); 
 		lv_obj_set_style_text_color(lblNextRoadDesc, lv_color_make(0x88, 0x88, 0xFF), LV_PART_MAIN);
+
+		lblNextTurn2 = lv_label_create(lv_scr_act());
+		lv_label_set_text(lblNextTurn2, "");
+		lv_obj_set_style_text_color(lblNextTurn2, lv_color_make(0x00, 0xFF, 0x00), LV_PART_MAIN); // Grün für 2. Abzweigung
+
+		lblHazard = lv_label_create(lv_scr_act());
+		lv_label_set_text(lblHazard, "");
+		lv_obj_set_style_text_color(lblHazard, lv_color_make(0xFF, 0xAA, 0x00), LV_PART_MAIN); // Orange für Warnungen
 
 		lblEta = lv_label_create(lv_scr_act());
 		lv_label_set_text(lblEta, "");
@@ -116,13 +131,38 @@ namespace UI {
 		lv_obj_set_style_width(lblNextRoadDesc, SCREEN_WIDTH - 20, LV_PART_MAIN);
 		lv_obj_set_style_text_font(lblNextRoadDesc, get_montserrat_semibold_24(), LV_STATE_DEFAULT);
 		lv_obj_set_style_text_align(lblNextRoadDesc, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-		lv_obj_align_to(lblNextRoadDesc, lblNextRoad, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 10);
+		lv_obj_align_to(lblNextRoadDesc, lblNextRoad, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 5);
+
+		// 2. Abzweigung
+		lv_label_set_long_mode(lblNextTurn2, LV_LABEL_LONG_WRAP);
+		lv_obj_set_style_width(lblNextTurn2, SCREEN_WIDTH - 20, LV_PART_MAIN);
+		lv_obj_set_style_text_font(lblNextTurn2, get_montserrat_semibold_24(), LV_STATE_DEFAULT);
+		lv_obj_set_style_text_align(lblNextTurn2, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+		lv_obj_align_to(lblNextTurn2, lblNextRoadDesc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 5);
+
+		// Warnungen / Hindernisse
+		lv_label_set_long_mode(lblHazard, LV_LABEL_LONG_WRAP);
+		lv_obj_set_style_width(lblHazard, SCREEN_WIDTH - 20, LV_PART_MAIN);
+		lv_obj_set_style_text_font(lblHazard, get_montserrat_semibold_24(), LV_STATE_DEFAULT);
+		lv_obj_set_style_text_align(lblHazard, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+		lv_obj_align_to(lblHazard, lblNextTurn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 5);
 
 		// ETA / Reststrecke ganz unten
 		lv_label_set_long_mode(lblEta, LV_LABEL_LONG_SCROLL_CIRCULAR);
 		lv_obj_set_style_text_font(lblEta, get_montserrat_24(), LV_STATE_DEFAULT);
 		lv_obj_set_style_width(lblEta, SCREEN_WIDTH - 20, LV_PART_MAIN);
 		lv_obj_align(lblEta, LV_ALIGN_BOTTOM_MID, 0, -10);
+	}
+
+	void updateThemeColors() {
+		using namespace details;
+		if (Pref::lightTheme) {
+			// Light mode (Hardware inverted): We want Red, so we send Cyan (0x00FFFF)
+			lv_obj_set_style_text_color(lblSpeed, lv_color_make(0x00, 0xFF, 0xFF), LV_PART_MAIN);
+		} else {
+			// Dark mode (Hardware normal): We want Red, so we send Red (0xFF0000)
+			lv_obj_set_style_text_color(lblSpeed, lv_color_make(0xFF, 0x00, 0x00), LV_PART_MAIN);
+		}
 	}
 
 	void update() {
@@ -190,6 +230,10 @@ namespace Data {
 		setEta(String());
 		setEte(String());
 		setDistanceToNextTurn(String());
+		setNextTurn2Distance(String());
+		setNextTurn2Text(String());
+		setHazardDistance(String());
+		setHazardText(String());
 		setTotalDistance(String());
 		setIconHash(String());
 		details::receivedIconHash = String();
@@ -280,35 +324,35 @@ namespace Data {
 		if (value == details::distanceToNextTurn)
 			return;
 		details::distanceToNextTurn = value;
+		lv_label_set_text(UI::details::lblDistanceToNextRoad, value.c_str());
+	}
 
-		// Splitting-Logik: "270m ● Text..." trennen
-		int mIdx = value.indexOf("m ");
-		int kmIdx = value.indexOf("km ");
-		String distPart = "";
-		String instrPart = value;
+	void setNextTurn2Distance(const String& value) {
+		details::nextTurn2Distance = value;
+		String combined = details::nextTurn2Distance + " " + details::nextTurn2Text;
+		combined.trim();
+		lv_label_set_text(UI::details::lblNextTurn2, replaceUmlauts(combined).c_str());
+	}
 
-		if (mIdx != -1) {
-			distPart = value.substring(0, mIdx + 1);
-			instrPart = value.substring(mIdx + 2);
-		} else if (kmIdx != -1) {
-			distPart = value.substring(0, kmIdx + 2);
-			instrPart = value.substring(kmIdx + 3);
-		}
+	void setNextTurn2Text(const String& value) {
+		details::nextTurn2Text = value;
+		String combined = details::nextTurn2Distance + " " + details::nextTurn2Text;
+		combined.trim();
+		lv_label_set_text(UI::details::lblNextTurn2, replaceUmlauts(combined).c_str());
+	}
 
-		// "Box"-Zeichen (Bullet) und führende Sonderzeichen am Anfang der Anweisung entfernen
-		while (instrPart.length() > 0 && (unsigned char)instrPart[0] > 127) {
-			instrPart.remove(0, 1);
-		}
-		instrPart.trim();
+	void setHazardDistance(const String& value) {
+		details::hazardDistance = value;
+		String combined = "";
+		if (!details::hazardText.isEmpty()) combined = "⚠️ " + details::hazardDistance + ": " + details::hazardText;
+		lv_label_set_text(UI::details::lblHazard, replaceUmlauts(combined).c_str());
+	}
 
-		if (distPart.length() > 0) {
-			lv_label_set_text(UI::details::lblDistanceToNextRoad, distPart.c_str());
-			lv_label_set_text(UI::details::lblNextRoad, replaceUmlauts(instrPart).c_str());
-		} else {
-			// Falls kein Distanz-Muster gefunden wurde, alles ins Hauptfeld
-			lv_label_set_text(UI::details::lblDistanceToNextRoad, "");
-			lv_label_set_text(UI::details::lblNextRoad, replaceUmlauts(value).c_str());
-		}
+	void setHazardText(const String& value) {
+		details::hazardText = value;
+		String combined = "";
+		if (!details::hazardText.isEmpty()) combined = "⚠️ " + details::hazardDistance + ": " + details::hazardText;
+		lv_label_set_text(UI::details::lblHazard, replaceUmlauts(combined).c_str());
 	}
 
 	String fullEta() {
