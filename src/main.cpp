@@ -35,6 +35,7 @@ void onCharacteristicWrite(const String& uuid, uint8_t* data, size_t length) {
 		ledcWrite(0, Pref::brightness * 10);
 		
 		Pref::lightTheme ? ThemeControl::light() : ThemeControl::dark();
+		UI::updateThemeColors();
 
 		if (kv.contains("removeAllFiles")) {
 			Data::removeAllFiles();
@@ -75,7 +76,7 @@ void onCharacteristicWrite(const String& uuid, uint8_t* data, size_t length) {
 	}
 
 	if (uuid == CHA_GPS_SPEED) {
-		navigationQueue.push(String("speed=") + value);
+		navigationQueue.push(String("spd=") + value);
 
 		pongSpeed();
 	}
@@ -103,17 +104,36 @@ void processQueue() {
 	const auto& data = navigationQueue.front();
 	const auto kv    = kvParseMultiline(data);
 
-	if (kv.contains("nextRd")) {
-		Data::setNextRoad(kv.getOrDefault("nextRd"));
+	// 1. Abzweigung
+	if (kv.contains("nxtTrnDst")) {
+		Data::setDistanceToNextTurn(kv.getOrDefault("nxtTrnDst"));
 	}
-	if (kv.contains("nextRdDesc")) {
-		Data::setNextRoadDesc(kv.getOrDefault("nextRdDesc"));
+	if (kv.contains("nxtTrnTxt")) {
+		Data::setNextRoad(kv.getOrDefault("nxtTrnTxt"));
 	}
-	if (kv.contains("distToNext")) {
-		Data::setDistanceToNextTurn(kv.getOrDefault("distToNext"));
+	if (kv.contains("nxtTrnIcn")) {
+		Data::setIconHash(kv.getOrDefault("nxtTrnIcn"));
 	}
-	if (kv.contains("totalDist")) {
-		Data::setTotalDistance(kv.getOrDefault("totalDist"));
+
+	// 2. Abzweigung
+	if (kv.contains("nxtTrn2Dst")) {
+		Data::setNextTurn2Distance(kv.getOrDefault("nxtTrn2Dst"));
+	}
+	if (kv.contains("nxtTrn2Txt")) {
+		Data::setNextTurn2Text(kv.getOrDefault("nxtTrn2Txt"));
+	}
+
+	// Hindernisse
+	if (kv.contains("hzrdDst")) {
+		Data::setHazardDistance(kv.getOrDefault("hzrdDst"));
+	}
+	if (kv.contains("hzrdTxt")) {
+		Data::setHazardText(kv.getOrDefault("hzrdTxt"));
+	}
+
+	// Reise-Informationen
+	if (kv.contains("ttLDst")) {
+		Data::setTotalDistance(kv.getOrDefault("ttLDst"));
 	}
 	if (kv.contains("eta")) {
 		Data::setEta(kv.getOrDefault("eta"));
@@ -121,11 +141,10 @@ void processQueue() {
 	if (kv.contains("ete")) {
 		Data::setEte(kv.getOrDefault("ete"));
 	}
-	if (kv.contains("iconHash")) {
-		Data::setIconHash(kv.getOrDefault("iconHash"));
-	}
-	if (kv.contains("speed")) {
-		Data::setSpeed(kv.getOrDefault("speed").toInt());
+
+	// Geschwindigkeit
+	if (kv.contains("spd")) {
+		Data::setSpeed(kv.getOrDefault("spd").toInt());
 	}
 
 	navigationQueue.pop();
@@ -158,6 +177,7 @@ void setup() {
 
 	// Theme initialisieren
 	ThemeControl::dark();
+	UI::updateThemeColors();
 
 	Serial.println("Init done");
 }

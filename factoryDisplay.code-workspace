@@ -3,6 +3,9 @@
 		{
 			"name": "factoryDisplay",
 			"path": "."
+		},
+		{
+			"path": "D:/unsyncedProjects/factoryDisplay_unsync"
 		}
 	],
 	"settings": {}
