@@ -2,9 +2,9 @@
 #define PREFERENCES_H
 
 namespace Pref {
-	bool lightTheme = false;
-	int brightness = 40;
-	int speedLimit = 60;
+	inline bool lightTheme = false;
+	inline int brightness = 40;
+	inline int speedLimit = 60;
 } // namespace Pref
 
 #endif // PREFERENCES_H
